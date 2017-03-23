@@ -9,6 +9,7 @@
 #include "wallaby_regs_p.hpp"
 
 
+#include "wallaby/camera.h"
 #include "wallaby/create.h"
 #include "wallaby/motors.h"
 #include "wallaby/servo.h"
@@ -50,6 +51,10 @@ void Wallaby::atExit(bool should_abort)
 
 	std::cout << "Auto-disabling servos" << std::endl;
 	disable_servos();
+
+
+	std::cout << "Auto-closing the camera" << std::endl;
+	camera_close();
 
 	std::cout << "Auto-stopping and disconnecting the Create" << std::endl;
 	create_stop();
