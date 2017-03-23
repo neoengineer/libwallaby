@@ -263,6 +263,7 @@ Camera::Device::Device()
   m_resolution(LOW_RES),
   m_model(WHITE_2016)
 {
+  printf("Camera::Device()\n");
   Config *config = Config::load(Camera::ConfigPath::defaultConfigPath());
   if(!config) return;
   setConfig(*config);
@@ -273,6 +274,7 @@ Camera::Device::Device()
 
 Camera::Device::~Device()
 {
+  printf("Camera::~Device()\n");
   ChannelPtrVector::const_iterator it = m_channels.begin();
   for(; it != m_channels.end(); ++it) delete *it;
   delete m_bgr;
@@ -285,6 +287,7 @@ Camera::Device::~Device()
 
 bool Camera::Device::open(const int number, Resolution resolution, Model model)
 {
+  printf("Camera::Device::open()\n");
 #ifdef NOT_A_WALLABY
   WARN("camera only supported on wallaby");
   return false;
@@ -421,6 +424,7 @@ unsigned Camera::Device::height() const
 
 bool Camera::Device::close()
 {
+  printf("Camera::Device::close()\n");
 #ifdef NOT_A_WALLABY
   WARN("camera only supported on wallaby");
   return false;
