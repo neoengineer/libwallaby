@@ -50,7 +50,12 @@ private:
 	unsigned char * read_buffer_;
 	const unsigned int buffer_size_; // same size for read/write buffers
 	unsigned long int update_count_;
+
+#ifndef EMSCRIPTEN
 	int spi_fd_;
+#else
+	int sock_;
+#endif
 	std::mutex transfer_mutex_;
 
 };

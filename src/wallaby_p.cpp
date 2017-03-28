@@ -36,6 +36,19 @@
 #include <iostream>
 #include <iomanip> // std::hex
 
+#ifdef EMSCRIPTEN
+#include <emscripten/emscripten.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <netinet/tcp.h>
+#include <string>
+#include <cstdio>
+#include <assert.h>
+#endif
+
 
 namespace Private
 {
@@ -85,12 +98,31 @@ Wallaby::Wallaby()
 	// TODO: move spi code outside constructor
 	// TODO: handle device path better
 
+#ifndef EMSCRIPTEN
 	spi_fd_ = open(WALLABY_SPI_PATH.c_str(), O_RDWR);
 	if (spi_fd_<=0)
 	{
 		// TODO: ifndef guard std::cout calls
 		std::cout << "Device not found: " << WALLABY_SPI_PATH << std::endl;
 	}
+#else
+  // emscripten connect to websocket server
+  sock_ = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (sock_ == -1)
+  {
+    perror("Could not create socket");
+  }
+
+  struct sockaddr_in server;
+  server.sin_addr.s_addr = inet_addr( "0.0.0.0" );
+  server.sin_family = AF_INET;
+  server.sin_port = htons( 8080 );
+
+  ::connect(sock_ , (struct sockaddr *)&server , sizeof(server));
+  emscripten_sleep(50);
+
+#endif
+
 
 	// register sig int handler
 	struct sigaction sigIntHandler;
@@ -99,6 +131,9 @@ Wallaby::Wallaby()
 	sigIntHandler.sa_flags = 0;
 	sigaction(SIGINT, &sigIntHandler, NULL);
 	sigaction(SIGTERM, &sigIntHandler, NULL);
+	
+
+  std::cout << " end of Wallaby() " << std::endl;
 }
 
 Wallaby::~Wallaby()
@@ -107,8 +142,11 @@ Wallaby::~Wallaby()
 
 	// happens automatically before destructor call: this->atExit();
 	atExit(false);
-
+#ifndef EMSCRIPTEN
 	close(spi_fd_);
+#else
+	// TODO: disconnect from websocket server
+#endif
 	delete[] write_buffer_;
 	delete[] read_buffer_;
 }
@@ -127,23 +165,43 @@ bool Wallaby::transfer(unsigned char * alt_read_buffer)
 	return false;
 #else
 
-#ifdef EMSCRIPTEN
-	return false;
-#else
-	if (spi_fd_ <= 0) return false; // TODO: feedback
-
 	const unsigned char * const read_buffer = (alt_read_buffer == nullptr) ? read_buffer_ : alt_read_buffer;
-
-	int status;
 
 	// transfer counter - used to detect missed packets on co-proc side
 	static unsigned char count = 0;
 	count += 1;
 
+
 	write_buffer_[0] = 'J';        //start
 	write_buffer_[1] = WALLABY_SPI_VERSION;          // version #
 	write_buffer_[2] = count;
 	write_buffer_[buffer_size_-1] = 'S'; // stop
+
+
+#ifdef EMSCRIPTEN
+	// TODO: full buffer
+	char buff[128];
+	int buff_size = 128;
+    ssize_t num_read = -1;
+
+    buff[0] = 'J';
+    buff[1] = 'S';
+
+    ::send(sock_ , buff , buff_size , 0);
+
+    while(num_read < 0)
+    {
+      emscripten_sleep(1);
+      num_read = ::recv(sock_ , buff , buff_size , 0);
+    }
+    printf("num_read %d: %d %d\n", num_read, buff[0], buff[1]);
+
+	update_count_ += 1;
+	return true;
+#else
+
+	if (spi_fd_ <= 0) return false; // TODO: feedback
+	int status;
 
 	struct spi_ioc_transfer	xfer[1];
 	memset(xfer, 0, sizeof xfer);
