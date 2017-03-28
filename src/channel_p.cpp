@@ -7,6 +7,9 @@
 
 #include "channel_p.hpp"
 #include "warn.hpp"
+
+#ifndef EMSCRIPTEN
+
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
@@ -137,3 +140,4 @@ void BarcodeChannelImpl::update(const cv::Mat &image)
   
   return ret;
 }
+#endif // EMSCRIPTEN

@@ -15,10 +15,14 @@ namespace Private
   class DeviceSingleton
   {
   public:    
+#ifndef EMSCRIPTEN
     static ::Camera::Device *instance();
-    
+#endif
+
   private:
+ #ifndef EMSCRIPTEN
     static ::Camera::Device *s_device;
+ #endif
   };
 }
 

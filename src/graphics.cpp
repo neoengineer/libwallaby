@@ -2,7 +2,10 @@
 
 #include <vector>
 #include <algorithm>
+
+#ifndef EMSCRIPTEN
 #include "PixelToaster.h"
+
 
 #include <iostream>
 
@@ -368,3 +371,5 @@ VI int get_mouse_right_button()
 {
 	return g_listener.isRightButtonDown();
 }
+
+#endif // EMSCRIPTEN

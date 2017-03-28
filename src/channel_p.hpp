@@ -9,6 +9,8 @@
 #define _CHANNEL_P_HPP_
 
 #include "wallaby/camera.hpp"
+
+#ifndef EMSCRIPTEN
 #include <opencv2/core/core.hpp>
 
 #include <zbar.h>
@@ -42,5 +44,7 @@ namespace Private
     };
   }
 }
+
+#endif // EMSCRIPTEN
 
 #endif

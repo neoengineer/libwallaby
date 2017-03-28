@@ -27,7 +27,9 @@
 #include <sys/stat.h>
 
 #ifndef NOT_A_WALLABY
+#ifndef EMSCRIPTEN
 #include <linux/spi/spidev.h>
+#endif
 #endif
 
 #include <string>
@@ -124,6 +126,10 @@ bool Wallaby::transfer(unsigned char * alt_read_buffer)
 	std::cerr << "Warning: this is not a wallaby; transfer failed" << std::endl;
 	return false;
 #else
+
+#ifdef EMSCRIPTEN
+	return false;
+#else
 	if (spi_fd_ <= 0) return false; // TODO: feedback
 
 	const unsigned char * const read_buffer = (alt_read_buffer == nullptr) ? read_buffer_ : alt_read_buffer;
@@ -171,6 +177,7 @@ bool Wallaby::transfer(unsigned char * alt_read_buffer)
 	}
 
 	return true;
+#endif
 #endif
 }
 

@@ -7,6 +7,8 @@
 
 #include "camera_c_p.hpp"
 
+#ifndef EMSCRIPTEN
+
 Camera::Device *Private::DeviceSingleton::s_device = 0;
 
 Camera::Device *Private::DeviceSingleton::instance()
@@ -14,3 +16,5 @@ Camera::Device *Private::DeviceSingleton::instance()
 	if(!s_device) s_device = new Camera::Device();
 	return s_device;
 }
+
+#endif // EMSCRIPTEN

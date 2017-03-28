@@ -44,19 +44,27 @@ int camera_open_device(int number, enum Resolution res)
 
 int camera_open_device_model_at_res(int number, enum Model model, enum Resolution res)
 {
+#ifndef EMSCRIPTEN
   bool ret = DeviceSingleton::instance()->open(number, res, model);
   if(!ret) return 0;
 
   return 1;
+#else
+  return 0;
+#endif
 }
 
 int camera_load_config(const char *name)
 {
+#ifndef EMSCRIPTEN
   Config *config = Config::load(Camera::ConfigPath::path(name));
   if(!config) return 0;
   DeviceSingleton::instance()->setConfig(*config);
   delete config;
   return 1;
+#else
+  return 0;
+#endif
 }
 
 void set_camera_width(int width)
@@ -65,7 +73,9 @@ void set_camera_width(int width)
     std::cout << "Camera width must be greater than 0." << std::endl;
     return;
   }
+#ifndef EMSCRIPTEN
   DeviceSingleton::instance()->setWidth(width);
+#endif
 }
 
 void set_camera_height(int height)
@@ -74,26 +84,41 @@ void set_camera_height(int height)
     std::cout << "Camera height must be greater than 0." << std::endl;
     return;
   }
+#ifndef EMSCRIPTEN
   DeviceSingleton::instance()->setHeight(height);
+#endif
 }
 
 int get_camera_width(void)
 {
+#ifndef EMSCRIPTEN
   return DeviceSingleton::instance()->width();
+#else
+  return -1;
+#endif
 }
 
 int get_camera_height(void)
 {
+#ifndef EMSCRIPTEN
   return DeviceSingleton::instance()->height();
+#else
+  return -1;
+#endif
 }
 
 int camera_update(void)
 {
+#ifndef EMSCRIPTEN
   return DeviceSingleton::instance()->update() ? 1 : 0;
+#else
+  return 0;
+#endif
 }
 
 pixel get_camera_pixel(point2 p)
 {
+#ifndef EMSCRIPTEN
   const cv::Mat &mat = DeviceSingleton::instance()->rawImage();
   if(mat.empty()) {
     WARN("camera image is empty");
@@ -113,25 +138,38 @@ pixel get_camera_pixel(point2 p)
   ret.b = v[0];
   
   return ret;
+#else
+  pixel ret; // TODO: better error value?
+  return ret;
+#endif
 }
 
 int get_channel_count(void)
 {
+#ifndef EMSCRIPTEN
   return DeviceSingleton::instance()->channels().size();
+#else
+  return -1;
+#endif
 }
 
 bool check_channel(int i)
 {
+#ifndef EMSCRIPTEN
   const Camera::ChannelPtrVector &channels = DeviceSingleton::instance()->channels();
   if(i < 0 || i >= channels.size()) {
     std::cout << "Channel must be in the range 0 .. " << (channels.size() - 1) << std::endl;
     return false;
   }
   return true;
+#else
+  return false;
+#endif
 }
 
 bool check_channel_and_object(int i, int j)
 {
+#ifndef EMSCRIPTEN
   const Camera::ChannelPtrVector &channels = DeviceSingleton::instance()->channels();
   if(i < 0 || i >= channels.size()) {
     if(!channels.size()) std::cout << "Active configuration doesn't have any channels.";
@@ -145,56 +183,87 @@ bool check_channel_and_object(int i, int j)
     return false;
   }
   return true;
+#else
+  return true;
+#endif
 }
 
 int get_object_count(int channel)
 {
+#ifndef EMSCRIPTEN
   if(!check_channel(channel)) return -1;
   return DeviceSingleton::instance()->channels()[channel]->objects()->size();
+#else
+  return -1;
+#endif
 }
 
 double get_object_confidence(int channel, int object)
 {
+#ifndef EMSCRIPTEN
   if(!check_channel_and_object(channel, object)) return 0.0;
   const Camera::Object &o = (*DeviceSingleton::instance()->channels()[channel]->objects())[object];
   return o.confidence();
+#else
+  return 0.0;
+#endif
 }
 
 
 const char *get_object_data(int channel, int object)
 {
+#ifndef EMSCRIPTEN
   if(!check_channel_and_object(channel, object)) return 0;
   const Camera::Object &o = (*DeviceSingleton::instance()->channels()[channel]->objects())[object];
   return o.data();
+#else
+  return 0;
+#endif
 }
 
 int get_code_num(int channel, int object)
 {
+#ifndef EMSCRIPTEN
   if(!check_channel_and_object(channel, object)) return -1;
   const char *data = get_object_data(channel, object);
   if(!data) return 0;
   return atoi(data);
+#else
+  return -1;
+#endif
 }
 
 int get_object_data_length(int channel, int object)
 {
+#ifndef EMSCRIPTEN
   if(!check_channel_and_object(channel, object)) return 0;
   const Camera::Object &o = (*DeviceSingleton::instance()->channels()[channel]->objects())[object];
   return o.dataLength();
+#else
+  return 0;
+#endif
 }
 
 int get_object_area(int channel, int object)
 {
+#ifndef EMSCRIPTEN
   if(!check_channel_and_object(channel, object)) return -1;
   const Camera::Object &o = (*DeviceSingleton::instance()->channels()[channel]->objects())[object];
   return o.boundingBox().area();
+#else
+  return -1;
+#endif
 }
 
 rectangle get_object_bbox(int channel, int object)
 {
+#ifndef EMSCRIPTEN
   if(!check_channel_and_object(channel, object)) return create_rectangle(-1, -1, 0, 0);
   const Camera::Object &o = (*DeviceSingleton::instance()->channels()[channel]->objects())[object];
   return o.boundingBox().toCRectangle();
+#else
+  return create_rectangle(-1, -1, 0, 0);
+#endif
 }
 
 int get_object_bbox_ulx(int channel, int object)
@@ -231,9 +300,13 @@ int get_object_bbox_height(int channel, int object)
 
 point2 get_object_centroid(int channel, int object)
 {
+#ifndef EMSCRIPTEN
   if(!check_channel_and_object(channel, object)) return create_point2(-1, -1);
   const Camera::Object &o = (*DeviceSingleton::instance()->channels()[channel]->objects())[object];
   return o.centroid().toCPoint2();
+#else
+  return create_point2(-1, -1);
+#endif
 }
 
 int get_object_centroid_column(int channel, int object)
@@ -258,9 +331,13 @@ int get_object_centroid_y(int channel, int object)
 
 point2 get_object_center(int channel, int object)
 {
+#ifndef EMSCRIPTEN
   if(!check_channel_and_object(channel, object)) return create_point2(-1, -1);
   const Camera::Object &o = (*DeviceSingleton::instance()->channels()[channel]->objects())[object];
   return o.boundingBox().center().toCPoint2();
+#else
+  return create_point2(-1, -1);
+#endif
 }
 
 int get_object_center_column(int channel, int object)
@@ -285,25 +362,41 @@ int get_object_center_y(int channel, int object)
 
 void camera_close()
 {
+#ifndef EMSCRIPTEN
   DeviceSingleton::instance()->close();
+#endif
 }
 
 void set_camera_config_base_path(const char *const path)
 {
+#ifndef EMSCRIPTEN
   Camera::ConfigPath::setBasePath(path);
+#endif
 }
 
 const unsigned char *get_camera_frame_row(unsigned row)
 {
+#ifndef EMSCRIPTEN
   return DeviceSingleton::instance()->rawImage().ptr(row);
+#else
+  return nullptr;
+#endif
 }
 
 const unsigned char *get_camera_frame()
 {
+#ifndef EMSCRIPTEN
   return DeviceSingleton::instance()->bgr();
+#else
+  return nullptr;
+#endif
 }
 
 unsigned get_camera_element_size()
 {
+#ifndef EMSCRIPTEN
   return DeviceSingleton::instance()->rawImage().elemSize();
+#else
+  return 0;
+#endif
 }

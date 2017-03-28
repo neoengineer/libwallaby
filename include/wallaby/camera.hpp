@@ -18,7 +18,9 @@
 
 #include "wallaby/camera.h"
 
+#ifndef EMSCRIPTEN
 #include <opencv2/core/core.hpp>
+#endif
 
 // These keys are used in the config files loaded by
 // Camera::Device
@@ -29,6 +31,8 @@
 
 #define CAMERA_CHANNEL_TYPE_HSV_KEY ("hsv")
 #define CAMERA_CHANNEL_TYPE_QR_KEY ("qr")
+
+#ifndef EMSCRIPTEN
 
 namespace cv
 {
@@ -204,6 +208,7 @@ namespace Camera
   Camera::Device *cDevice();
 }
 
+#endif // EMSCRIPTEN
 
 
 #endif

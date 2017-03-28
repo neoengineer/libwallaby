@@ -11,10 +11,15 @@
 #include "warn.hpp"
 
 #include <fstream>
+
+#ifndef EMSCRIPTEN
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <jpeglib.h>
+#endif
+
+
 #include <csetjmp>
 #include <iostream>
 
@@ -27,9 +32,12 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#ifndef EMSCRIPTEN
 #include <linux/videodev2.h>
 #endif
+#endif
 
+#ifndef EMSCRIPTEN
 using namespace Camera;
 
 // Object //
@@ -902,3 +910,4 @@ int Camera::Device::xioctl(int fh, int request, void *arg)
   return r;
 #endif
 }
+#endif // EMSCRIPTEN
