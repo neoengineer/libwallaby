@@ -66,25 +66,26 @@ int main(void)
 	camera_open_device_model_at_res(0, TELLO, TELLO_RES);
 
 	// Load a color channel configuration file
-	printf("load config\n");fflush(NULL);
+	printf("load config\n");fflush(stdout);
     int ret = camera_load_config("red");
     if (ret == 1) { 
-		printf("...success\n");fflush(NULL);
+		printf("...success\n");fflush(stdout);
 	}
 
-	printf("waiting for camera_update\n");fflush(NULL);
+	printf("waiting for camera_update\n");fflush(stdout);
     camera_update();
-    printf("Cam width x height:  %d x %d\n", get_camera_width(), get_camera_height());fflush(NULL);
+    printf("Cam width x height:  %d x %d\n", get_camera_width(), get_camera_height());fflush(stdout);
 
-    printf("Num channels = %d\n", get_channel_count());fflush(NULL);
+    printf("Num channels = %d\n", get_channel_count());fflush(stdout);
 
 
 	// Image processing has started so now launch the tello and start blob tracking
 
-
 	// Launch the tello. This cammond will not return until the tello has completed the takeoff and
 	// is holding position at the defeulat altitude
-
+	send_result = tello_send("takeoff");
+	printf("send_result %d\n", send_result); fflush(stdout);
+	// msleep(500);
 
 	// Autonomous loop...
 	int i;
@@ -100,9 +101,10 @@ int main(void)
 		// tello to keep the blob's center in the center of the display
 
 		// The tello coordinate system is a top view looking down orientation
-		// x values move the tello left, right
-		// y values move the tello forward and backwards
-		// z values increase and decrease the tello's altitude.
+		// a values move the tello left(-), right(+)
+		// b values move the tello forward(+) and backwards(-)
+		// c values increase(+) and decrease(-) the tello's altitude.
+		// d values yaw cw (+) and ccw (-)
 
 		// Blobs are tracked by size, with blob 0 being the largest blob found
 
@@ -119,56 +121,56 @@ int main(void)
 			int obj_center_x = get_object_center_x(0,0);
 			int obj_center_y = get_object_center_y(0,0);
 			
-			printf("objs: %d (%d,%d)\n", obj_count, obj_center_x, obj_center_y); fflush(NULL);
+			printf("objs: %d (%d,%d)\n", obj_count, obj_center_x, obj_center_y); fflush(stdout);
 	
 			// Compute the blob's offset from center
 			int obj_offset_x = obj_center_x - 640;
 			int obj_offset_y = obj_center_y - 320;
 			
-			printf("offset (%d,%d)\n", obj_offset_x, obj_offset_y); fflush(NULL);
+			printf("offset (%d,%d)\n", obj_offset_x, obj_offset_y); fflush(stdout);
 
-			// Compute x,z movement to keep the blob in the center of the image
+			// Compute a,c movement to keep the blob in the center of the image
 			// If the blob is not in the center, we will make very small position adjustments
 			// to prevent overshooting the target position
-			int x_movement = 0;
-			int y_movement = 0;
-			int z_movement = 0;
+			int a_movement = 0;
+			int b_movement = 0;
+			int c_movement = 0;
 					
 			if (obj_offset_x < -64)			// obj is left of center, so move left
-				x_movement = -10;
+				a_movement = -10;
 			else if (obj_offset_x > 64)		// obj is right of center, so move right
-				x_movement = 10;
+				a_movement = 10;
 				
 			if (obj_offset_y < -32)			// obj is below center, so descend
-				z_movement = -10;
+				c_movement = -10;
 			else if (obj_offset_y > 32)		// obj is above center so ascend
-				z_movement = 10;
+				c_movement = 10;
 
 			// Compute y movement to keep constant distance (fixed bounding box area)
 			// Determine the area as a percentage of the total image size (128x720)
-			float area = 921600 / get_object_area(0,0);
-			printf("area = %f\n", area); fflush(NULL);
+			float area = (float)get_object_area(0,0) / 921600.0;
+			printf("area = %f\n", area); fflush(stdout);
 
 			if (area < 0.04)				// Area is small, so move forward
-				y_movement = 10;
+				b_movement = 10;
 			else if (area > 0.4)			// Area is large, so move back
-				y_movement = -10;
+				b_movement = -10;
 			// else: y_movement = 0
 			
-			printf("movement x=%d, y=%d, z=%d\n", x_movement, y_movement, z_movement); fflush(NULL);
+			printf("movement x=%d, y=%d, z=%d\n", a_movement, b_movement, c_movement); fflush(stdout);
 
-			sprintf(cmd_buffer, "%d %d %d %d", x_movement, y_movement, z_movement, 0 );
-			send_result = tello_send(cmd_buffer);
-			printf("send_result %d\n", send_result); fflush(NULL);
+			sprintf(cmd_buffer, "rc %d %d %d %d", a_movement, b_movement, c_movement, 0 );
+			send_result = tello_send_no_wait(cmd_buffer);
+			printf("send_result %d\n", send_result); fflush(stdout);
 			msleep(500);
 		}
 			
 		else
 		{
 			// We do not see or lost track of the blob, so stop moving
-			sprintf(cmd_buffer, "%d %d %d %d", 0, 0, 0, 0 );
-			send_result = tello_send(cmd_buffer);
-			printf("send_result %d\n", send_result); fflush(NULL);
+			sprintf(cmd_buffer, "rc %d %d %d %d", 0, 0, 0, 0 );
+			send_result = tello_send_no_wait(cmd_buffer);
+			printf("send_result %d\n", send_result); fflush(stdout);
 			msleep(500);
 		}                    
 	}

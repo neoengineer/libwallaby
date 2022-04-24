@@ -14,6 +14,8 @@ int wpa_cmd(char const  * cmd, char * buf);
 
 int tello_send(char const * command);
 
+int tello_send_no_wait(char const * command);
+
 int wpa_sup_connect();
 
 #ifdef __cplusplus

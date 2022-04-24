@@ -62,7 +62,7 @@ int main(void)
 	camera_open_device_model_at_res(0, TELLO, HIGH_RES);
 
 	printf("load config\n");fflush(NULL);
-    int ret = camera_load_config("1");
+    int ret = camera_load_config("red");
     if (ret == 1) printf("...success\n");
 fflush(NULL);
 	printf("waiting for camera_update\n");fflush(NULL);

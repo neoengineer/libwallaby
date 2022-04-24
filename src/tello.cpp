@@ -132,7 +132,7 @@ int tello_send(char const * command)
 	socklen_t len;
 	int max_fd = tello_cmd_socket + 1;
 
-        fd_set rfds;
+    	fd_set rfds;
         struct timeval tv;
         int retval;
 
@@ -181,6 +181,66 @@ int tello_send(char const * command)
         printf ("Tello: %s\n", buf); fflush(NULL);
 	return 0;
 }
+
+int tello_send_no_wait(char const * command)
+{
+	size_t cmd_len;
+	char buf[BUFSIZE];
+	int n;
+	socklen_t len;
+	int max_fd = tello_cmd_socket + 1;
+
+    	fd_set rfds;
+        struct timeval tv;
+        int retval;
+
+	tello_cmd_addr.sin_family = AF_INET;
+        tello_cmd_addr.sin_port = htons (TELLO_CMD_PORT);
+        tello_cmd_addr.sin_addr.s_addr = inet_addr("192.168.10.1");
+	printf("Command: %s\n", command);
+
+        cmd_len = (size_t)strlen(command);
+
+        sendto (tello_cmd_socket, command, cmd_len,
+                MSG_CONFIRM, (const struct sockaddr *) &tello_cmd_addr,
+                        sizeof (tello_cmd_addr));
+	// make sure the response comes back within
+	// a given time
+
+	FD_ZERO(&rfds);
+        FD_SET(tello_cmd_socket, &rfds);
+
+        /* Wait up to .2 seconds. */
+
+           tv.tv_sec = 0;
+           tv.tv_usec = 10000;
+
+           retval = select(max_fd, &rfds, NULL, NULL, &tv);
+	printf("retval ; %d\n", retval); fflush(NULL);
+	
+	if (retval == -1)
+	{
+		perror("select()"); fflush(NULL);
+		return (-1);
+	}
+
+	if (retval == 0)
+	{
+		printf("send_to_tello - timeout\n"); fflush(NULL);
+		return (-2);
+	}
+
+
+        n = recvfrom ( tello_cmd_socket, (char *) buf, BUFSIZE,
+                        MSG_WAITALL, (struct sockaddr *) &tello_cmd_addr,
+                        &len);
+        buf[n] = '\0';
+
+        printf ("Tello: %s\n", buf); fflush(NULL);
+
+	return 0;
+}
+					
 
 int wpa_sup_connect()
 {
