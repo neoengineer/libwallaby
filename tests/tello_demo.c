@@ -39,15 +39,19 @@ int main(void)
 		printf("WPA Supplicant not active\n");
 		return -1;
 	}
+
+/*
 	tellos = tellos_find();
 
 	if(tellos == NULL)
 		return;
 	else
 		printf ("Tellos: %s\n", tellos);
+*/
 
 	// connect to the first tello on the list
-	tello_connect(tellos);
+//	tello_connect(tellos);
+	tello_connect("TELLO-FCD21A");
 
 	//wpa_cmd ("LIST_NETWORKS", buf);
 
@@ -83,7 +87,7 @@ int main(void)
 
 	// Launch the tello. This cammond will not return until the tello has completed the takeoff and
 	// is holding position at the defeulat altitude
-	send_result = tello_send("takeoff");
+// 	send_result = tello_send("takeoff");
 	printf("send_result %d\n", send_result); fflush(stdout);
 	// msleep(500);
 
